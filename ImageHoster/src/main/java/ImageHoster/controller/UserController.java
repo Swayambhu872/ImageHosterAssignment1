@@ -14,6 +14,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpSession;
 import java.util.List;
+import java.util.regex.Pattern;
 
 
 @Controller
@@ -41,16 +42,21 @@ public class UserController {
     //This controller method is called when the request pattern is of type 'users/registration' and also the incoming request is of POST type
     //This method calls the business logic and after the user record is persisted in the database, directs to login page
     @RequestMapping(value = "users/registration", method = RequestMethod.POST)
-    public String registerUser(User user, RedirectAttributes redirectAttributes) {
-        String password = user.getPassword();
-        if (validatePassword(password)) {
+    public String registerUser(User user, Model model) {
+        //Initialise the error message for password
+        String error = "Password must contain atleast 1 alphabet, 1 number & 1 special character";
+
+        model.addAttribute("User", user);
+        //adding error string to model object
+        model.addAttribute("passwordTypeError", error);
+
+        if(Pattern.matches("^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#&()–[{}]:;',?/*~$^+=<>]).{3,}$", user.getPassword())) {
             userService.registerUser(user);
             return "users/login";
         } else {
-            String error = "Password must contain atleast 1 alphabet, 1 number & 1 special character";
-            redirectAttributes.addAttribute("passwordTypeError", error).addFlashAttribute("passwordTypeError", error);
-            return "redirect:/users/registration";
+            return "users/registration";
         }
+
     }
 
     //This controller method is called when the request pattern is of type 'users/login'
@@ -86,26 +92,5 @@ public class UserController {
         List<Image> images = imageService.getAllImages();
         model.addAttribute("images", images);
         return "index";
-    }
-    //This method is called to check if the the users password fulfills the given password criteria
-    private boolean validatePassword(String password) {
-        boolean hasAlphabet = false;
-        boolean hasNum = false;
-        boolean hasSpecialCharacter = false;
-        char c;
-        for (int i = 0; i < password.length(); i++) {
-            c = password.charAt(i);
-            if (Character.isAlphabetic(c)) {
-                hasAlphabet = true;
-            } else if (Character.isDigit(c)) {
-                hasNum = true;
-            } else if (!Character.isAlphabetic(c) && !Character.isDigit(c) && !Character.isLetter(c) && !Character.isSpaceChar(c)) {
-                hasSpecialCharacter = true;
-            }
-            if (hasAlphabet && hasNum && hasSpecialCharacter) {
-                return  true;
-            }
-        }
-        return false;
     }
 }
